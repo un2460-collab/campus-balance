@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Balance</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+    }
+
+    .fc {
+      background: white;
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .fc-toolbar-title {
+      font-size: 1.4rem !important;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .fc-button {
+      background: #2563eb !important;
+      border: none !important;
+      border-radius: 0.6rem !important;
+      padding: 0.45rem 0.75rem !important;
+      font-weight: 600 !important;
+    }
+
+    .fc-button:hover {
+      background: #1d4ed8 !important;
+    }
+
+    .fc-event {
+      border: none !important;
+      border-radius: 0.5rem !important;
+      padding: 2px 4px !important;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-800">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <header class="mb-6">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <p class="text-blue-600 font-bold">Campus Balance</p>
+          <h1 class="text-3xl md:text-4xl font-black text-slate-900">
+            캠퍼스 밸런스
+          </h1>
+          <p class="text-slate-500 mt-2">
+            대학생·대학원생 맞춤형 라이프 스케줄러 & 피로도 관리
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-4 min-w-[230px]">
+          <p class="text-sm text-slate-500">선택 날짜 피로도</p>
+          <div class="flex items-end gap-2 mt-1">
+            <span id="fatigueScore" class="text-4xl font-black text-blue-600">0</span>
+            <span class="pb-1 text-slate-500">점</span>
+          </div>
+          <p id="selectedDateLabel" class="text-sm text-slate-400 mt-1">날짜를 선택하세요</p>
+        </div>
+      </div>
+    </header>
+
+    <section id="alertBanner" class="hidden mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 shadow-sm">
+      <div class="flex gap-3">
+        <div class="text-2xl">⚠️</div>
+        <div>
+          <h2 class="font-extrabold text-red-700">AI 피로도 경고</h2>
+          <p class="text-red-700 mt-1">
+            오늘 학업과 알바로 일과 로드가 높습니다. 빈 시간에는 추가 일정을 잡지 말고 휴식을 취하세요!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <aside class="lg:col-span-1 space-y-6">
+        <section class="bg-white rounded-2xl shadow p-5">
+          <h2 class="text-xl font-black mb-4">일정 추가</h2>
+
+          <form id="eventForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-bold mb-1">일정명</label>
+              <input
+                id="title"
+                type="text"
+                required
+                placeholder="예: 알고리즘 과제"
+                class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold mb-1">카테고리</label>
+              <select
+                id="category"
+                required
+                class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="study">학업</option>
+                <option value="exam">과제·시험</option>
+                <option value="work">알바</option>
+                <option value="private">사적 약속</option>
+                <option value="etc">기타</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold mb-1">시작</label>
+              <input
+                id="start"
+                type="datetime-local"
+                required
+                class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold mb-1">종료</label>
+              <input
+                id="end"
+                type="datetime-local"
+                required
+                class="w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="w-full rounded-xl bg-blue-600 text-white py-3 font-extrabold hover:bg-blue-700 transition"
+            >
+              일정 등록하기
+            </button>
+          </form>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow p-5">
+          <h2 class="text-xl font-black mb-4">카테고리</h2>
+
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center justify-between">
+              <span><span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2"></span>학업</span>
+              <strong>+1</strong>
+            </div>
+            <div class="flex items-center justify-between">
+              <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>과제·시험</span>
+              <strong>+3</strong>
+            </div>
+            <div class="flex items-center justify-between">
+              <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-2"></span>알바</span>
+              <strong>+2</strong>
+            </div>
+            <div class="flex items-center justify-between">
+              <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>사적 약속</span>
+              <strong>-1</strong>
+            </div>
+            <div class="flex items-center justify-between">
+              <span><span class="inline-block w-3 h-3 rounded-full bg-gray-400 mr-2"></span>기타</span>
+              <strong>0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow p-5">
+          <h2 class="text-xl font-black mb-3">AI 휴식 제안</h2>
+          <p id="aiMessage" class="text-slate-600 leading-relaxed">
+            날짜를 선택하면 해당 날짜의 피로도를 분석해 드릴게요.
+          </p>
+        </section>
+      </aside>
+
+      <section class="lg:col-span-2">
+        <div id="calendar"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "campusBalanceEvents";
+
+    const categoryConfig = {
+      study: {
+        label: "학업",
+        color: "#3b82f6",
+        fatigue: 1
+      },
+      exam: {
+        label: "과제·시험",
+        color: "#ef4444",
+        fatigue: 3
+      },
+      work: {
+        label: "알바",
+        color: "#facc15",
+        textColor: "#1f2937",
+        fatigue: 2
+      },
+      private: {
+        label: "사적 약속",
+        color: "#22c55e",
+        fatigue: -1
+      },
+      etc: {
+        label: "기타",
+        color: "#9ca3af",
+        fatigue: 0
+      }
+    };
+
+    let calendar;
+    let selectedDate = getTodayString();
+
+    function getTodayString() {
+      const today = new Date();
+      return formatDate(today);
+    }
+
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function loadEvents() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    }
+
+    function saveEvents(events) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    }
+
+    function getCalendarEvents() {
+      return loadEvents().map(event => {
+        const config = categoryConfig[event.category];
+
+        return {
+          id: event.id,
+          title: `[${config.label}] ${event.title}`,
+          start: event.start,
+          end: event.end,
+          backgroundColor: config.color,
+          borderColor: config.color,
+          textColor: config.textColor || "#ffffff",
+          extendedProps: {
+            category: event.category,
+            originalTitle: event.title
+          }
+        };
+      });
+    }
+
+    function calculateFatigue(dateString) {
+      const events = loadEvents();
+      let score = 0;
+
+      events.forEach(event => {
+        const eventDate = event.start.slice(0, 10);
+
+        if (eventDate === dateString) {
+          score += categoryConfig[event.category].fatigue;
+        }
+      });
+
+      return score;
+    }
+
+    function updateDashboard(dateString) {
+      selectedDate = dateString;
+
+      const score = calculateFatigue(dateString);
+      const fatigueScore = document.getElementById("fatigueScore");
+      const selectedDateLabel = document.getElementById("selectedDateLabel");
+      const alertBanner = document.getElementById("alertBanner");
+      const aiMessage = document.getElementById("aiMessage");
+
+      fatigueScore.textContent = score;
+      selectedDateLabel.textContent = `${dateString} 기준`;
+
+      if (score > 7) {
+        alertBanner.classList.remove("hidden");
+        fatigueScore.className = "text-4xl font-black text-red-600";
+        aiMessage.textContent =
+          "오늘 학업과 알바로 일과 로드가 높습니다. 빈 시간에는 추가 일정을 잡지 말고 휴식을 취하세요!";
+      } else if (score >= 4) {
+        alertBanner.classList.add("hidden");
+        fatigueScore.className = "text-4xl font-black text-orange-500";
+        aiMessage.textContent =
+          "조금 바쁜 하루예요. 중요한 일정 사이에 짧은 휴식 시간을 확보해 보세요.";
+      } else if (score >= 1) {
+        alertBanner.classList.add("hidden");
+        fatigueScore.className = "text-4xl font-black text-blue-600";
+        aiMessage.textContent =
+          "무난한 일정이에요. 집중 시간과 휴식 시간을 균형 있게 유지해 보세요.";
+      } else {
+        alertBanner.classList.add("hidden");
+        fatigueScore.className = "text-4xl font-black text-green-600";
+        aiMessage.textContent =
+          "여유가 있는 하루예요. 재충전하거나 개인 시간을 보내기 좋아요.";
+      }
+    }
+
+    function refreshCalendar() {
+      calendar.removeAllEvents();
+      getCalendarEvents().forEach(event => calendar.addEvent(event));
+      updateDashboard(selectedDate);
+    }
+
+    function addEvent(eventData) {
+      const events = loadEvents();
+      events.push(eventData);
+      saveEvents(events);
+      refreshCalendar();
+    }
+
+    function deleteEvent(eventId) {
+      const events = loadEvents().filter(event => event.id !== eventId);
+      saveEvents(events);
+      refreshCalendar();
+    }
+
+    function setDefaultDateTimeInputs(dateString) {
+      const startInput = document.getElementById("start");
+      const endInput = document.getElementById("end");
+
+      startInput.value = `${dateString}T09:00`;
+      endInput.value = `${dateString}T10:00`;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const calendarEl = document.getElementById("calendar");
+
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "ko",
+        height: "auto",
+        selectable: true,
+        nowIndicator: true,
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+        },
+        buttonText: {
+          today: "오늘",
+          month: "월",
+          week: "주",
+          day: "일",
+          list: "목록"
+        },
+        events: getCalendarEvents(),
+
+        dateClick: function (info) {
+          updateDashboard(info.dateStr);
+          setDefaultDateTimeInputs(info.dateStr);
+        },
+
+        eventClick: function (info) {
+          const confirmDelete = confirm(
+            `"${info.event.title}" 일정을 삭제할까요?`
+          );
+
+          if (confirmDelete) {
+            deleteEvent(info.event.id);
+          }
+        },
+
+        eventDidMount: function (info) {
+          info.el.title = "클릭하면 삭제할 수 있어요.";
+        }
+      });
+
+      calendar.render();
+
+      setDefaultDateTimeInputs(selectedDate);
+      updateDashboard(selectedDate);
+
+      document.getElementById("eventForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const title = document.getElementById("title").value.trim();
+        const category = document.getElementById("category").value;
+        const start = document.getElementById("start").value;
+        const end = document.getElementById("end").value;
+
+        if (!title || !category || !start || !end) {
+          alert("모든 항목을 입력해 주세요.");
+          return;
+        }
+
+        if (new Date(start) >= new Date(end)) {
+          alert("종료 시간은 시작 시간보다 늦어야 합니다.");
+          return;
+        }
+
+        const newEvent = {
+          id: crypto.randomUUID(),
+          title,
+          category,
+          start,
+          end
+        };
+
+        addEvent(newEvent);
+        updateDashboard(start.slice(0, 10));
+
+        e.target.reset();
+        setDefaultDateTimeInputs(start.slice(0, 10));
+      });
+    });
+  </script>
+</body>
+</html>
